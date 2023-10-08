@@ -1,0 +1,81 @@
+---
+title: "Exercise_Chapter_3"
+toc: true
+number-sections: true
+highlight-style: pygments
+format: 
+  html: 
+    code-fold: true
+    self-contained: true
+editor: visual
+author: Swapnil Mishra
+---
+
+## 3E3
+
+*How much posterior probability lies between p = 0.2 and p = 0.8?*
+
+```{r}
+p_grid <- seq( from=0 , to=1 , length.out=1000 )
+prior <- rep( 1 , 1000 )
+likelihood <- dbinom( 6 , size=9 , prob=p_grid )
+posterior <- likelihood * prior
+posterior <- posterior / sum(posterior)
+set.seed(100)
+samples <- sample( p_grid , prob=posterior , size=1e4 , replace=TRUE )
+
+100*sum(samples>=0.2 & samples <=0.8 )/length(samples)
+```
+
+## 3M3
+
+*Construct a posterior predictive check for this model and data. This means simulate the distri- bution of samples, averaging over the posterior uncertainty in p. What is the probability of observing 8 water in 15 tosses?*
+
+```{r}
+p_grid <- seq( from=0 , to=1 , length.out=1000 )
+prior <- rep( 1 , 1000 )
+likelihood <- dbinom( 8 , size=15 , prob=p_grid )
+posterior <- likelihood * prior
+posterior <- posterior / sum(posterior)
+
+samples <- sample( p_grid , prob=posterior , size=1e6, replace = TRUE)
+## based on this
+w <- rbinom( 1e6 , size=15 , prob=samples )
+
+print(sum(w==8)/length(w))
+
+hist(w)
+abline(v=8, col="red", lty=2, lwd=3)
+```
+
+## 3H5
+
+*The model assumes that sex of first and second births are independent. To check this assump- tion, focus now on second births that followed female first borns. Compare 10,000 simulated counts of boys to only those second births that followed girls. To do this correctly, you need to count the number of first borns who were girls and simulate that many births, 10,000 times. Compare the counts of boys in your simulations to the actual observed count of boys following girls. How does the model look in this light? Any guesses what is going on in these data?*
+
+```{r}
+birth1 <- c(1,0,0,0,1,1,0,1,0,1,0,0,1,1,0,1,1,0,0,0,1,0,0,0,1,0,
+0,0,0,1,1,1,0,1,0,1,1,1,0,1,0,1,1,0,1,0,0,1,1,0,1,0,0,0,0,0,0,0,
+1,1,0,1,0,0,1,0,0,0,1,0,0,1,1,1,1,0,1,0,1,1,1,1,1,0,0,1,0,1,1,0,
+1,0,1,1,1,0,1,1,1,1)
+birth2 <- c(0,1,0,1,0,1,1,1,0,0,1,1,1,1,1,0,0,1,1,1,0,0,1,1,1,0,
+1,1,1,0,1,1,1,0,1,0,0,1,1,1,1,0,0,1,0,1,1,1,1,1,1,1,1,1,1,1,1,1,
+1,1,1,0,1,1,0,1,1,0,1,1,1,0,0,0,0,0,0,1,0,0,0,1,1,0,0,1,0,0,1,1,
+0,0,0,1,1,1,0,0,0,0)
+
+## second births which are only after girl child
+sb_gc <-birth2[birth1==0]
+
+##
+p <- seq( from=0 , to=1 , length.out=1e5 )
+prior <- rep(1,length(p))
+likelihood <- dbinom( sum(birth1) + sum(birth2), size=200 , prob=p )
+posterior <- likelihood * prior
+posterior <- posterior / sum(posterior)
+
+samples <-  sample( p , size=1e5 , replace=TRUE , prob=posterior )
+
+sb_gc_sim <- rbinom( 1e4 , size=length(sb_gc) , prob=samples )
+
+hist(sb_gc_sim)
+abline( v=sum(sb_gc) , col="red", lty=2, lwd=3 )
+```
